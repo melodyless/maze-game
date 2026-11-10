@@ -111,15 +111,30 @@ function resizeCanvas() {
   const w = window.innerWidth || document.documentElement.clientWidth || document.body.clientWidth;
   const h = window.innerHeight || document.documentElement.clientHeight || document.body.clientHeight;
 
-  canvas.width = w;
-  canvas.height = h;
+  // 获取设备的物理像素比 (Retina 高清屏通常是 2 或 3)
+  const dpr = window.devicePixelRatio || 1;
 
-  // 上方留出标题栏高度(约60px)，下方留出触控按键区(约85px)，左右留出适量边距
-  const availW = Math.max(200, w - 40);
-  const availH = Math.max(200, h - 145);
+  // 1. 设置 Canvas 实际渲染的物理像素（高分辨率）
+  canvas.width = Math.floor(w * dpr);
+  canvas.height = Math.floor(h * dpr);
+
+  // 2. CSS 显示尺寸依然保持逻辑像素（撑满屏幕）
+  canvas.style.width = w + 'px';
+  canvas.style.height = h + 'px';
+
+  // 3. 将绘制上下文缩放 dpr 倍，后续所有绘制坐标与逻辑保持完全不变，画面却成倍清晰！
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.imageSmoothingEnabled = true;
+  ctx.imageSmoothingQuality = 'high';
+
+  // 严格为手机刘海屏、顶部标题栏预留安全高度（85px），底部为虚拟按键预留（125px），左右预留24px
+  const topReserved = 85;
+  const bottomReserved = 125;
+  const availW = Math.max(160, w - 24);
+  const availH = Math.max(160, h - (topReserved + bottomReserved));
 
   const bestSize = Math.floor(Math.min(availW / MAZE_COLS, availH / MAZE_ROWS));
-  CELL_SIZE = Math.max(16, Math.min(bestSize, 38));
+  CELL_SIZE = Math.max(14, Math.min(bestSize, 36));
 
   if (cells && cells.length > 0) {
     draw();
@@ -513,20 +528,24 @@ function drawDoor(ctx, door, size) {
   ctx.restore();
 }
 
-// 主绘制函数
+// 核心主绘制循环
 function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  const dpr = window.devicePixelRatio || 1;
+  const logicalW = canvas.width / dpr;
+  const logicalH = canvas.height / dpr;
+
+  ctx.clearRect(0, 0, logicalW, logicalH);
 
   // 1. 科技深空背景
   const bgGrad = ctx.createRadialGradient(
-    canvas.width / 2, canvas.height / 2, 80,
-    canvas.width / 2, canvas.height / 2, Math.max(canvas.width, canvas.height)
+    logicalW / 2, logicalH / 2, 80,
+    logicalW / 2, logicalH / 2, Math.max(logicalW, logicalH)
   );
   bgGrad.addColorStop(0, '#102a43');
   bgGrad.addColorStop(0.5, '#0b1d3a');
   bgGrad.addColorStop(1, '#050c1a');
   ctx.fillStyle = bgGrad;
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  ctx.fillRect(0, 0, logicalW, logicalH);
 
   // 2. 闪烁星空
   for (const s of stars) {
@@ -538,19 +557,20 @@ function draw() {
     ctx.fill();
   }
 
-  // 3. 迷宫居中位置计算（考虑顶部标题栏和底部按键，做最佳视觉居中）
+  // 3. 迷宫居中位置计算（严格避开顶部 85px 状态栏和底部 125px 触控按键区）
+  const topReserved = 85;
+  const bottomReserved = 125;
   const mazeWidth = MAZE_COLS * CELL_SIZE;
   const mazeHeight = MAZE_ROWS * CELL_SIZE;
-  const startX = Math.round((canvas.width - mazeWidth) / 2);
-  // 垂直方向：将迷宫在顶部标题(约60px)与底部控制栏(约80px)的有效净空区域内居中
-  const startY = Math.round(55 + (canvas.height - 135 - mazeHeight) / 2);
+  const startX = Math.round((logicalW - mazeWidth) / 2);
+  const startY = Math.round(topReserved + (logicalH - topReserved - bottomReserved - mazeHeight) / 2);
 
-  // 4. 左下角地球与右上角火箭（装饰大小随屏幕弹性适配）
-  const sideSpace = Math.min(startX, canvas.width - (startX + mazeWidth));
-  const decorRadius = Math.max(25, Math.min(sideSpace * 0.55, 60));
-  if (sideSpace >= 35) {
-    drawEarth(ctx, startX - decorRadius * 0.7, startY + mazeHeight - decorRadius * 0.4, decorRadius);
-    drawRocket(ctx, startX + mazeWidth + decorRadius * 0.7, startY + decorRadius * 0.5, decorRadius * 0.9);
+  // 4. 左下角地球与右上角火箭（装饰大小随屏幕弹性适配，空间不足时自动隐藏，避免遮挡）
+  const sideSpace = Math.min(startX, logicalW - (startX + mazeWidth));
+  const decorRadius = Math.max(20, Math.min(sideSpace * 0.52, 55));
+  if (sideSpace >= 45) {
+    drawEarth(ctx, startX - decorRadius * 0.7, startY + mazeHeight - decorRadius * 0.35, decorRadius);
+    drawRocket(ctx, startX + mazeWidth + decorRadius * 0.7, startY + decorRadius * 0.45, decorRadius * 0.85);
   }
 
   ctx.save();

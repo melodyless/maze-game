@@ -16,40 +16,42 @@
 
         #gameHeader {
             position: absolute;
-            top: 15px;
+            top: env(safe-area-inset-top, 10px);
             left: 0;
             width: 100%;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding: 0 20px;
+            padding: 8px 12px;
             z-index: 10;
             pointer-events: none;
         }
 
         .title-badge {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 18px;
-            border-radius: 25px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2), 0 0 10px rgba(0, 240, 255, 0.5);
-            font-size: 1.1rem;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 5px 12px;
+            border-radius: 20px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2), 0 0 8px rgba(0, 240, 255, 0.4);
+            font-size: 0.9rem;
             color: #1d3557;
             font-weight: bold;
             display: flex;
             align-items: center;
-            gap: 8px;
+            gap: 5px;
             border: 2px solid #00f0ff;
+            pointer-events: auto;
         }
 
         .stats-badge {
-            background: rgba(255, 255, 255, 0.9);
-            padding: 8px 16px;
-            border-radius: 20px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-            font-size: 1rem;
+            background: rgba(255, 255, 255, 0.92);
+            padding: 5px 10px;
+            border-radius: 16px;
+            box-shadow: 0 3px 10px rgba(0,0,0,0.2);
+            font-size: 0.85rem;
             color: #e63946;
             font-weight: bold;
             border: 2px solid #ffb703;
+            pointer-events: auto;
         }
 
         #mazeCanvas {
@@ -248,8 +250,8 @@
     <div id="gameHeader">
         <div class="title-badge">🚀 量子芯片探险 <span id="levelBadge" style="margin-left:8px; color:#ffb703;">第 1 关</span></div>
         <div style="display: flex; gap: 10px; align-items: center; pointer-events: auto;">
-            <button id="hintBtn" style="background: linear-gradient(135deg, #ffd166, #ffb703); color: #1d3557; border: 2px solid #fff; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 183, 3, 0.4); display: flex; align-items: center; gap: 5px; outline: none;">
-                💡 导航提示 (<span id="hintCount">3</span>)
+            <button id="hintBtn" style="background: linear-gradient(135deg, #ffd166, #ffb703); color: #1d3557; border: 2px solid #fff; padding: 5px 10px; border-radius: 16px; font-weight: bold; font-size: 0.85rem; cursor: pointer; box-shadow: 0 3px 10px rgba(255, 183, 3, 0.4); display: flex; align-items: center; gap: 4px; outline: none; pointer-events: auto;">
+                💡 提示 (<span id="hintCount">3</span>)
             </button>
             <div class="stats-badge" id="stepCounter">👣 步数: 0</div>
         </div>

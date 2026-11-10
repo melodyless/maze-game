@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <title>太空探险：量子芯片微观迷宫</title>
+    <style>
+        * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
+        body, html {
+            margin: 0; padding: 0;
+            width: 100vw; height: 100vh;
+            overflow: hidden;
+            background: #050c1a;
+            font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif;
+        }
+
+        #gameHeader {
+            position: absolute;
+            top: 15px;
+            left: 0;
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 20px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .title-badge {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 18px;
+            border-radius: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2), 0 0 10px rgba(0, 240, 255, 0.5);
+            font-size: 1.1rem;
+            color: #1d3557;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            border: 2px solid #00f0ff;
+        }
+
+        .stats-badge {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 8px 16px;
+            border-radius: 20px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+            font-size: 1rem;
+            color: #e63946;
+            font-weight: bold;
+            border: 2px solid #ffb703;
+        }
+
+        #mazeCanvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        /* 移动端/iPad 触控按键区 */
+        #controls {
+            position: absolute;
+            right: 25px;
+            bottom: 25px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+            z-index: 15;
+        }
+
+        .ctrl-row {
+            display: flex;
+            gap: 12px;
+        }
+
+        .btn-ctrl {
+            width: 60px;
+            height: 60px;
+            border-radius: 18px;
+            border: none;
+            background: linear-gradient(145deg, #ffffff, #e6ecf5);
+            color: #2b2d42;
+            font-size: 1.6rem;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25), 0 0 12px rgba(255, 255, 255, 0.4);
+            cursor: pointer;
+            outline: none;
+            transition: all 0.1s ease;
+            touch-action: manipulation;
+        }
+
+        .btn-ctrl:active {
+            transform: scale(0.92) translateY(3px);
+            background: linear-gradient(145deg, #00f0ff, #0077b6);
+            color: #fff;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.3);
+        }
+
+        /* 重开按钮 */
+        #restartBtn {
+            position: absolute;
+            left: 20px;
+            bottom: 25px;
+            background: linear-gradient(135deg, #ffb703, #fb8500);
+            color: white;
+            border: none;
+            padding: 12px 20px;
+            border-radius: 25px;
+            font-family: inherit;
+            font-size: 1rem;
+            font-weight: bold;
+            box-shadow: 0 4px 15px rgba(251, 133, 0, 0.4);
+            cursor: pointer;
+            z-index: 15;
+            transition: transform 0.1s;
+        }
+        #restartBtn:active { transform: scale(0.95); }
+
+        /* 题目弹窗 */
+        #quizOverlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(13, 27, 42, 0.75);
+            backdrop-filter: blur(8px);
+            color: #1d3557;
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 30;
+            padding: 20px;
+        }
+
+        .quiz-card {
+            background: #ffffff;
+            border-radius: 28px;
+            padding: 30px 25px;
+            width: 90%;
+            max-width: 420px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.3), 0 0 25px rgba(0, 240, 255, 0.5);
+            text-align: center;
+            border: 4px solid #00f0ff;
+            animation: popIn 0.35s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        @keyframes popIn {
+            0% { transform: scale(0.7); opacity: 0; }
+            100% { transform: scale(1); opacity: 1; }
+        }
+
+        .quiz-card h2 {
+            margin: 0 0 10px 0;
+            color: #0077b6;
+            font-size: 1.6rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .quiz-desc {
+            font-size: 1.05rem;
+            color: #4a5568;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .quiz-options {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin-bottom: 15px;
+        }
+
+        .option-btn {
+            background: #f0f8ff;
+            border: 2px solid #bde0fe;
+            color: #1d3557;
+            padding: 12px 18px;
+            border-radius: 16px;
+            font-family: inherit;
+            font-size: 1.05rem;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+            text-align: left;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .option-btn:hover, .option-btn:active {
+            background: #a2d2ff;
+            border-color: #0077b6;
+            transform: translateX(4px);
+        }
+
+        .option-btn.correct {
+            background: #d4edda !important;
+            border-color: #28a745 !important;
+            color: #155724 !important;
+        }
+
+        .option-btn.wrong {
+            background: #f8d7da !important;
+            border-color: #dc3545 !important;
+            color: #721c24 !important;
+        }
+
+        #feedback {
+            margin-top: 12px;
+            font-size: 1.1rem;
+            font-weight: bold;
+            min-height: 26px;
+        }
+
+        /* 胜利全屏特效 */
+        #winBanner {
+            position: absolute;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.7);
+            backdrop-filter: blur(5px);
+            display: none;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 40;
+            color: white;
+            text-align: center;
+            animation: popIn 0.4s ease;
+        }
+        #winBanner h1 {
+            font-size: 2.8rem;
+            color: #ffb703;
+            text-shadow: 0 4px 20px rgba(255, 183, 3, 0.6);
+            margin: 0 0 10px 0;
+        }
+    </style>
+</head>
+<body>
+    <div id="gameHeader">
+        <div class="title-badge">🚀 量子芯片探险 <span id="levelBadge" style="margin-left:8px; color:#ffb703;">第 1 关</span></div>
+        <div style="display: flex; gap: 10px; align-items: center; pointer-events: auto;">
+            <button id="hintBtn" style="background: linear-gradient(135deg, #ffd166, #ffb703); color: #1d3557; border: 2px solid #fff; padding: 6px 14px; border-radius: 20px; font-weight: bold; font-size: 0.95rem; cursor: pointer; box-shadow: 0 4px 12px rgba(255, 183, 3, 0.4); display: flex; align-items: center; gap: 5px; outline: none;">
+                💡 导航提示 (<span id="hintCount">3</span>)
+            </button>
+            <div class="stats-badge" id="stepCounter">👣 步数: 0</div>
+        </div>
+    </div>
+
+    <canvas id="mazeCanvas"></canvas>
+
+    <!-- 重新生成迷宫 -->
+    <button id="restartBtn">🔄 换个新迷宫</button>
+
+    <!-- 虚拟按键（适合手机/iPad） -->
+    <div id="controls">
+        <button class="btn-ctrl" id="btnUp">▲</button>
+        <div class="ctrl-row">
+            <button class="btn-ctrl" id="btnLeft">◀</button>
+            <button class="btn-ctrl" id="btnDown">▼</button>
+            <button class="btn-ctrl" id="btnRight">▶</button>
+        </div>
+    </div>
+
+    <!-- 科技答题门弹窗（多选题模式，更适合触屏点击） -->
+    <div id="quizOverlay">
+        <div class="quiz-card">
+            <h2>⚛️ 量子科技身份认证</h2>
+            <div class="quiz-desc" id="quizQuestion">请回答这道科技小常识打开终点大门：</div>
+            <div class="quiz-options" id="quizOptions"></div>
+            <div id="feedback"></div>
+        </div>
+    </div>
+
+    <!-- 胜利画面 -->
+    <div id="winBanner">
+        <div style="font-size: 4rem;">🎉🛰️✨</div>
+        <h1 id="winTitle">恭喜过关！</h1>
+        <p style="font-size: 1.2rem; color: #caf0f8; margin-bottom: 25px;" id="winDetails">成功穿过量子芯片，启动探险火箭！</p>
+        <div style="display: flex; gap: 15px;">
+            <button id="nextLevelBtn" style="padding: 12px 25px; font-size: 1.15rem; font-family: inherit; border: none; border-radius: 25px; background: linear-gradient(135deg, #ffb703, #fb8500); color: white; cursor: pointer; font-weight: bold; box-shadow: 0 6px 20px rgba(251, 133, 0, 0.5);">进入下一关 ➡️</button>
+            <button id="playAgainBtn" style="padding: 12px 25px; font-size: 1.15rem; font-family: inherit; border: none; border-radius: 25px; background: linear-gradient(135deg, #00f0ff, #0077b6); color: white; cursor: pointer; font-weight: bold; box-shadow: 0 6px 20px rgba(0, 240, 255, 0.5);">重玩本关</button>
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
